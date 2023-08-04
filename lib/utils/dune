@@ -1,0 +1,4 @@
+(library
+ (name utils)
+ (public_name gbcamel.utils)
+ (modules u16))

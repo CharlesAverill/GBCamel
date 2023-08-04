@@ -1,0 +1,3 @@
+(tests
+ (names register_tests memory_tests)
+ (libraries alcotest gbcamel.cpu gbcamel.memory))

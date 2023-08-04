@@ -1,0 +1,4 @@
+(library
+ (name gbcamel)
+ (public_name gbcamel)
+ (modules logging globals))
