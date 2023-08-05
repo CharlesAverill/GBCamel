@@ -24,9 +24,11 @@ let read_word cpu mem =
 let is_flag_set cpu flag =
   if r16_of_r8 (f cpu.regs) land flag = 1 then true else false
 
+let is_flag_set_b cpu flag = if is_flag_set cpu flag then 1 else 0
+
 let set_flag cpu flag value =
-  if value then set_f cpu.regs (r8_of_int (r16_of_r8 (f cpu.regs) lor flag))
-  else set_f cpu.regs (r8_of_int (r16_of_r8 (f cpu.regs) land (flag lxor -1)))
+  if value then set_f cpu.regs (`R16 (r16_of_r8 (f cpu.regs) lor flag))
+  else set_f cpu.regs (`R16 (r16_of_r8 (f cpu.regs) land (flag lxor -1)))
 
 let rp_table_write rp =
   match rp with
@@ -64,14 +66,14 @@ let r_table_read mem r =
 
 let r_table_write regs mem r data =
   match r with
-  | 0 -> set_b regs data
-  | 1 -> set_c regs data
-  | 2 -> set_d regs data
-  | 3 -> set_e regs data
-  | 4 -> set_h regs data
-  | 5 -> set_l regs data
+  | 0 -> set_b regs (`R8 data)
+  | 1 -> set_c regs (`R8 data)
+  | 2 -> set_d regs (`R8 data)
+  | 3 -> set_e regs (`R8 data)
+  | 4 -> set_h regs (`R8 data)
+  | 5 -> set_l regs (`R8 data)
   | 6 -> write mem (hl regs) data
-  | 7 -> set_a regs data
+  | 7 -> set_a regs (`R8 data)
   | _ ->
       fatal rc_DecodeError
         (Printf.sprintf "Tried to decode r[%d] for reading, range is [0:7]" r)
@@ -110,7 +112,7 @@ let rotate_left cpu n' include_carry update_zero =
   let n = r16_of_r8 n' in
   let msb = n lsr 7 in
   let result =
-    if include_carry then (n lsl 1) lor if is_flag_set cpu fCAR then 1 else 0
+    if include_carry then (n lsl 1) lor is_flag_set_b cpu fCAR
     else (n lsl 1) lor (n lsr 7) land 0xFF
   in
   set_flag cpu fCAR (msb = 1);
@@ -123,8 +125,7 @@ let rotate_right cpu n' include_carry update_zero =
   let n = r16_of_r8 n' in
   let lsb = n land 1 in
   let result =
-    if include_carry then
-      (n lsr 1) lor ((if is_flag_set cpu fCAR then 1 else 0) lsl 7)
+    if include_carry then (n lsr 1) lor (is_flag_set_b cpu fCAR lsl 7)
     else (n lsl 1) lor (n lsr 7) land 0xFF
   in
   set_flag cpu fCAR (lsb = 1);
@@ -227,20 +228,20 @@ let decode_execute cpu mem op' =
               match p with
               (* LD A, (BC) *)
               | 0 ->
-                  set_a regs (read mem (bc regs));
+                  set_a regs (`R8 (read mem (bc regs)));
                   2
               (* LD A, (DE) *)
               | 1 ->
-                  set_a regs (read mem (de regs));
+                  set_a regs (`R8 (read mem (de regs)));
                   2
               (* LD A, (HL+) *)
               | 2 ->
-                  set_a regs (read mem (hl regs));
+                  set_a regs (`R8 (read mem (hl regs)));
                   hli regs;
                   2
               (* LD A, (HL-) *)
               | 3 ->
-                  set_a regs (read mem (hl regs));
+                  set_a regs (`R8 (read mem (hl regs)));
                   hld regs;
                   2
               | _ -> decode_error_p ())
@@ -274,24 +275,39 @@ let decode_execute cpu mem op' =
           match y with
           | 0 ->
               (* RLCA *)
-              set_a regs (rotate_left cpu (a regs) false false);
+              set_a regs (`R8 (rotate_left cpu (a regs) false false));
               1
           | 1 ->
               (* RRCA *)
-              set_a regs (rotate_right cpu (a regs) false false);
+              set_a regs (`R8 (rotate_right cpu (a regs) false false));
               1
           | 2 ->
               (* RLA  *)
-              set_a regs (rotate_left cpu (a regs) true false);
+              set_a regs (`R8 (rotate_left cpu (a regs) true false));
               1
           | 3 ->
               (* RRA  *)
-              set_a regs (rotate_right cpu (a regs) true false);
+              set_a regs (`R8 (rotate_right cpu (a regs) true false));
               1
           | 4 -> (* DAA  *) fatal rc_DecodeError "DAA not yet implemented"
-          | 5 -> (* CPL  *) 9
-          | 6 -> (* SCF  *) 9
-          | 7 -> (* CCF  *) 9
+          | 5 ->
+              (* CPL  *)
+              set_a regs (`R16 (r16_of_r8 (a regs) lxor -1));
+              set_flag cpu fHCR true;
+              set_flag cpu fSUB true;
+              1
+          | 6 ->
+              (* SCF  *)
+              set_flag cpu fSUB false;
+              set_flag cpu fHCR false;
+              set_flag cpu fCAR true;
+              1
+          | 7 ->
+              (* CCF  *)
+              set_flag cpu fSUB false;
+              set_flag cpu fHCR false;
+              set_flag cpu fCAR (is_flag_set_b cpu fCAR lxor 1 = 1);
+              1
           | _ -> decode_error_y ())
       | _ -> decode_error_z ())
   | _ -> decode_error_x ()

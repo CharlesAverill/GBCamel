@@ -62,11 +62,11 @@ let pc regs = !(regs.pc)
 
 (* Setter functions to minimize interactions with refs*)
 let set_high r v' =
-  let v = r16_of_r8 v' in
+  let v = match v' with `R8 c -> r16_of_r8 c | `R16 i -> i in
   r := u16_lshift (v land 0xFF) 8 lor (!r land 0xFF) land u16_max
 
-let set_low r v' =
-  let v = r16_of_r8 v' in
+let set_low r (v' : [> `R16 of int | `R8 of char ]) =
+  let v = match v' with `R8 c -> r16_of_r8 c | `R16 i -> i in
   r := !r land 0xFF00 lor (v land 0xFF) land u16_max
 
 let set_a regs a = set_high regs.af a
@@ -125,14 +125,14 @@ let _init_registers () =
     { af = ref 0; bc = ref 0; de = ref 0; hl = ref 0; sp = ref 0; pc = ref 0 }
   in
   let _set_defaults =
-    set_a out (r8_of_int 0x01);
-    set_f out (r8_of_int 0xB0);
-    set_b out (r8_of_int 0x00);
-    set_c out (r8_of_int 0x13);
-    set_d out (r8_of_int 0x00);
-    set_e out (r8_of_int 0xD8);
-    set_h out (r8_of_int 0x01);
-    set_l out (r8_of_int 0x4D);
+    set_a out (`R16 0x01);
+    set_f out (`R16 0xB0);
+    set_b out (`R16 0x00);
+    set_c out (`R16 0x13);
+    set_d out (`R16 0x00);
+    set_e out (`R16 0xD8);
+    set_h out (`R16 0x01);
+    set_l out (`R16 0x4D);
     set_sp out 0xFFFE;
     set_pc out 0x0150
   in
