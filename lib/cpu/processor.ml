@@ -104,6 +104,18 @@ let pop cpu mem =
   set_sp cpu.regs (u16_add (sp cpu.regs) 1);
   combine high low
 
+(** Pop 16 bits from the stack and load them into a set register in the RP2 table *)
+let pop_rp2 cpu mem idx =
+  let value = pop cpu mem in
+  match idx with
+  | 0 -> set_bc cpu.regs value
+  | 1 -> set_de cpu.regs value
+  | 2 -> set_hl cpu.regs value
+  | 3 -> set_af cpu.regs (value land 0xFFF0)
+  | _ ->
+      fatal rc_DecodeError
+        (Printf.sprintf "Tried to decode rp2[%d], range is [0:3]" idx)
+
 (** No-operation *)
 let nop () = 1
 
@@ -126,19 +138,19 @@ let j_cond cpu cond address =
   let cond_met = ref false in
   let _ =
     match cond land 0b11 with
-    | cond when cond = cNZ ->
+    | cond when cond = ccNZ ->
         if not (is_flag_set cpu fZER) then j cpu address;
         cond_met := true
-    | cond when cond = cZR ->
+    | cond when cond = ccZ ->
         if is_flag_set cpu fZER then j cpu address;
         cond_met := true
-    | cond when cond = cNC ->
+    | cond when cond = ccNC ->
         if not (is_flag_set cpu fCAR) then j cpu address;
         cond_met := true
-    | cond when cond = cCR ->
+    | cond when cond = ccC ->
         if is_flag_set cpu fCAR then j cpu address;
         cond_met := true
-    | _ -> ()
+    | _ -> cond_decode_error cond
   in
   if !cond_met then 4 else 3
 
@@ -147,6 +159,31 @@ let jr_cond cpu cond offset = j_cond cpu cond (u16_add (pc cpu.regs) offset)
 
 (** Return *)
 let ret cpu mem = set_pc cpu.regs (pop cpu mem)
+
+(** Conditional return *)
+let ret_cond cpu mem cond =
+  match cond with
+  | cond when cond = ccNZ ->
+      if not (is_flag_set cpu fZER) then (
+        ret cpu mem;
+        5)
+      else 2
+  | cond when cond = ccZ ->
+      if is_flag_set cpu fZER then (
+        ret cpu mem;
+        5)
+      else 2
+  | cond when cond = ccNC ->
+      if not (is_flag_set cpu fCAR) then (
+        ret cpu mem;
+        5)
+      else 2
+  | cond when cond = ccC ->
+      if is_flag_set cpu fCAR then (
+        ret cpu mem;
+        5)
+      else 2
+  | _ -> cond_decode_error cond
 
 (** (dest += src)%r16 *)
 let add16 dest src = dest := u16_add !dest src
@@ -241,7 +278,10 @@ let alu cpu _mem idx operand =
   | 7 ->
       cp_a operand;
       1
-  | _ -> 0
+  | _ ->
+      fatal rc_DecodeError
+        (Printf.sprintf "Tried to decode ALU operation %d but range is [0:7]"
+           idx)
 
 (** Leftward bit-rotation operation *)
 let rotate_left cpu n' include_carry update_zero =
@@ -271,7 +311,12 @@ let rotate_right cpu n' include_carry update_zero =
   set_flag cpu fZER (result = 0 && update_zero);
   r8_of_int result
 
-(** General decoder - layout is based on this table - https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html *)
+(** General decoder
+
+    Layout is based on this table - https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html 
+
+    Returns the number of cycles taken to execute the provided instruction
+*)
 let decode_execute cpu mem op' =
   let op = r16_of_r8 op' in
   let regs = cpu.regs in
@@ -451,9 +496,11 @@ let decode_execute cpu mem op' =
           | _ -> decode_error_y ())
       | _ -> decode_error_z ())
   | 1 -> (
-      match z with
       (* 8-bit loading *)
+      match z with
+      (* LD r, r *)
       | z when z = y -> nop ()
+      (* LD r[y], r[z] *)
       | z when z <> 6 ->
           let read_hl, readf = r_table_read mem z in
           r_table_write regs mem y (readf regs);
@@ -461,10 +508,71 @@ let decode_execute cpu mem op' =
       (* Exception (replaces LD (HL), (HL)) *)
       | 6 -> halt cpu
       | _ -> decode_error_z ())
-  (* Operate on accumulator and register/memory location *)
   | 2 ->
+      (* Operate on accumulator and register/memory location *)
       let read_hl, readf = r_table_read mem z in
       (if read_hl then 1 else 0) + alu cpu mem y (readf regs)
+  | 3 -> (
+      match z with
+      | 0 -> (
+          (* Conditional return, mem-mapped register loads and stack operations *)
+          match y with
+          (* RET cc[y] *)
+          | y when y >= 0 && y <= 3 -> ret_cond cpu mem y
+          (* LD (0xFF00 + n), A *)
+          | 4 ->
+              write mem (0xFF00 lor r16_of_r8 (read_byte cpu mem)) (a cpu.regs);
+              3
+          (* ADD SP, d *)
+          | 5 ->
+              let d = signed_int_of_r8 (read_byte cpu mem) in
+              let result = u16_add (sp regs) d in
+              set_flag cpu fCAR (result land 0xFF < sp cpu.regs land 0xFF);
+              set_flag cpu fHCR (result land 0xF < sp cpu.regs land 0xF);
+              set_flag cpu fZER false;
+              set_flag cpu fSUB false;
+              set_sp regs result;
+              4
+          (* LD A, (0xFF00 + n) *)
+          | 6 ->
+              set_a regs
+                (`R8 (read mem (0xFF00 land r16_of_r8 (read_byte cpu mem))));
+              3
+          (* LD HL, SP + d *)
+          | 7 ->
+              let d = signed_int_of_r8 (read_byte cpu mem) in
+              let result = u16_add (sp regs) d in
+              set_flag cpu fCAR (result land 0xFF < sp cpu.regs land 0xFF);
+              set_flag cpu fHCR (result land 0xF < sp cpu.regs land 0xF);
+              set_flag cpu fZER false;
+              set_flag cpu fSUB false;
+              set_hl regs result;
+              3
+          | _ -> decode_error_y ())
+      | 1 -> (
+          if (* POP & various ops *)
+             q = 0 then (
+            (* POP rp2[p] *)
+            pop_rp2 cpu mem p;
+            3)
+          else
+            match q with
+            (* RET *)
+            | 0 ->
+                ret cpu mem;
+                4
+            (* RETI *)
+            | 1 -> fatal rc_DecodeError "RETI not yet implemented"
+            (* JP HL *)
+            | 2 ->
+                j cpu (hl cpu.regs);
+                1
+            (* LD SP, HL *)
+            | 3 ->
+                set_sp regs (hl cpu.regs);
+                2
+            | _ -> decode_error_q ())
+      | _ -> decode_error_z ())
   | _ -> decode_error_x ()
 
 (** Performs one step of the decode-execute cycle *)
