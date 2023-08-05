@@ -96,6 +96,17 @@ let push cpu mem data =
   set_sp cpu.regs (u16_sub (sp cpu.regs) 1);
   write mem (sp cpu.regs) (low data)
 
+(** Push 16 bits onto the stack from a set register in the RP2 table *)
+let push_rp2 cpu mem idx =
+  match idx with
+  | 0 -> push cpu mem (bc cpu.regs)
+  | 1 -> push cpu mem (de cpu.regs)
+  | 2 -> push cpu mem (hl cpu.regs)
+  | 3 -> push cpu mem (af cpu.regs)
+  | _ ->
+      fatal rc_DecodeError
+        (Printf.sprintf "Tried to decode rp2[%d], range is [0:3]" idx)
+
 (** Pop 16 bits from the stack *)
 let pop cpu mem =
   let low = read mem (sp cpu.regs) in
@@ -128,34 +139,72 @@ let halt cpu =
   1
 
 (** Unconditional jump *)
-let j cpu address = set_pc cpu.regs address
+let jp cpu address = set_pc cpu.regs address
 
 (** Unconditional relative jump*)
-let jr cpu offset = j cpu (u16_add (pc cpu.regs) offset)
+let jr cpu offset = jp cpu (u16_add (pc cpu.regs) offset)
 
-(** Conditional jump *)
-let j_cond cpu cond address =
+(** Conditional jump 
+    
+    jp_cond [cpu] [cond] [address]
+*)
+let jp_cond cpu cond address =
   let cond_met = ref false in
   let _ =
     match cond land 0b11 with
     | cond when cond = ccNZ ->
-        if not (is_flag_set cpu fZER) then j cpu address;
+        if not (is_flag_set cpu fZER) then jp cpu address;
         cond_met := true
     | cond when cond = ccZ ->
-        if is_flag_set cpu fZER then j cpu address;
+        if is_flag_set cpu fZER then jp cpu address;
         cond_met := true
     | cond when cond = ccNC ->
-        if not (is_flag_set cpu fCAR) then j cpu address;
+        if not (is_flag_set cpu fCAR) then jp cpu address;
         cond_met := true
     | cond when cond = ccC ->
-        if is_flag_set cpu fCAR then j cpu address;
+        if is_flag_set cpu fCAR then jp cpu address;
         cond_met := true
     | _ -> cond_decode_error cond
   in
   if !cond_met then 4 else 3
 
-(** Conditional relative jump *)
-let jr_cond cpu cond offset = j_cond cpu cond (u16_add (pc cpu.regs) offset)
+(** Conditional relative jump 
+    
+    jr_cond [cpu] [cond] [offset]
+*)
+let jr_cond cpu cond offset = jp_cond cpu cond (u16_add (pc cpu.regs) offset)
+
+(** Call 
+    
+    call [cpu] [mem] [new_pc]
+*)
+let call cpu mem new_pc =
+  push cpu mem (pc cpu.regs);
+  set_pc cpu.regs new_pc
+
+(** Conditional call
+    
+    call [cpu] [mem] [new_pc] [cond]
+*)
+let call_cond cpu mem new_pc cond =
+  let cond_met = ref false in
+  let _ =
+    match cond land 0b11 with
+    | cond when cond = ccNZ ->
+        if not (is_flag_set cpu fZER) then call cpu mem new_pc;
+        cond_met := true
+    | cond when cond = ccZ ->
+        if is_flag_set cpu fZER then call cpu mem new_pc;
+        cond_met := true
+    | cond when cond = ccNC ->
+        if not (is_flag_set cpu fCAR) then call cpu mem new_pc;
+        cond_met := true
+    | cond when cond = ccC ->
+        if is_flag_set cpu fCAR then call cpu mem new_pc;
+        cond_met := true
+    | _ -> cond_decode_error cond
+  in
+  if !cond_met then 6 else 3
 
 (** Return *)
 let ret cpu mem = set_pc cpu.regs (pop cpu mem)
@@ -185,11 +234,22 @@ let ret_cond cpu mem cond =
       else 2
   | _ -> cond_decode_error cond
 
+(** Restart *)
+let rst cpu mem addr =
+  if not (addr >= 0 && addr <= 7) then
+    fatal rc_DecodeError
+      (Printf.sprintf "Tried to restart with address %d, bounds are [0:7]" addr)
+  else call cpu mem (addr * 8);
+  4
+
 (** (dest += src)%r16 *)
 let add16 dest src = dest := u16_add !dest src
 
-(** ALU table *)
-let alu cpu _mem idx operand =
+(** ALU table 
+    
+    alu [cpu] [table_idx] [operand]
+*)
+let alu cpu idx operand =
   let add_a addval use_carry =
     let octal_xF = '\017' in
     let aval, cval =
@@ -474,7 +534,8 @@ let decode_execute cpu mem op' =
               (* RRA  *)
               set_a regs (`R8 (rotate_right cpu (a regs) true false));
               1
-          | 4 -> (* DAA  *) fatal rc_DecodeError "DAA not yet implemented"
+          | 4 ->
+              (* DAA  *) fatal rc_ImplementationError "DAA not yet implemented"
           | 5 ->
               (* CPL  *)
               set_a regs (`R16 (r16_of_r8 (a regs) lxor -1));
@@ -511,7 +572,7 @@ let decode_execute cpu mem op' =
   | 2 ->
       (* Operate on accumulator and register/memory location *)
       let read_hl, readf = r_table_read mem z in
-      (if read_hl then 1 else 0) + alu cpu mem y (readf regs)
+      (if read_hl then 1 else 0) + alu cpu y (readf regs)
   | 3 -> (
       match z with
       | 0 -> (
@@ -562,16 +623,88 @@ let decode_execute cpu mem op' =
                 ret cpu mem;
                 4
             (* RETI *)
-            | 1 -> fatal rc_DecodeError "RETI not yet implemented"
+            | 1 -> fatal rc_ImplementationError "RETI not yet implemented"
             (* JP HL *)
             | 2 ->
-                j cpu (hl cpu.regs);
+                jp cpu (hl cpu.regs);
                 1
             (* LD SP, HL *)
             | 3 ->
                 set_sp regs (hl cpu.regs);
                 2
             | _ -> decode_error_q ())
+      | 2 -> (
+          (* Conditional jump *)
+          match y with
+          (* JP cc[y], nn *)
+          | y when y >= 0 && y <= 3 -> jp_cond cpu y (read_word cpu mem)
+          (* LD (0xFF00+C), A *)
+          | 4 ->
+              write mem (0xFF00 land r16_of_r8 (c regs)) (a regs);
+              2
+          (* LD (nn), A *)
+          | 5 ->
+              write mem (read_word cpu mem) (a regs);
+              4
+          (* LD A, (0xFF00+C) *)
+          | 6 ->
+              set_a regs (`R8 (read mem (0xFF00 land r16_of_r8 (c regs))));
+              2
+          (* LD A, (nn) *)
+          | 7 ->
+              set_a regs (`R8 (read mem (read_word cpu mem)));
+              4
+          | _ -> decode_error_y ())
+      | 3 -> (
+          (* Assorted operations *)
+          match y with
+          (* JP nn *)
+          | 0 ->
+              jp cpu (read_word cpu mem);
+              4
+          (* CB prefix *)
+          | y when y >= 1 && y <= 5 ->
+              fatal rc_ImplementationError
+                "CB-prefix instructions not yet implemented"
+          (* DI *)
+          | 6 -> fatal rc_ImplementationError "DI not yet implemented"
+          (* EI *)
+          | 7 -> fatal rc_ImplementationError "EI not yet implemented"
+          | _ -> decode_error_y ())
+      | 4 -> (
+          (* Conditional call *)
+          match y with
+          (* CALL cc[y], nn *)
+          | y when y >= 0 && y <= 3 -> call_cond cpu mem (read_word cpu mem) y
+          (* CB prefix *)
+          | y when y >= 4 && y <= 7 ->
+              fatal rc_ImplementationError
+                "CB-prefix instructions not yet implemented"
+          | _ -> decode_error_y ())
+      | 5 -> (
+          if (* PUSH & various ops *)
+             q = 0 then (
+            (* PUSH rp2[p] *)
+            push_rp2 cpu mem p;
+            4)
+          else
+            match p with
+            (* CALL nn *)
+            | 0 ->
+                call cpu mem (read_word cpu mem);
+                6
+            | p when p >= 1 && p <= 3 ->
+                fatal rc_ImplementationError
+                  "CB-prefix instructions not yet implemented"
+            | _ -> decode_error_p ())
+      | 6 ->
+          (* Operate on accumulator and immediate operand *)
+          (* alu[y] n *)
+          alu cpu y (read_byte cpu mem) + 1
+      | 7 ->
+          (* Restart *)
+          (* RST y*8 *)
+          rst cpu mem y
       | _ -> decode_error_z ())
   | _ -> decode_error_x ()
 
