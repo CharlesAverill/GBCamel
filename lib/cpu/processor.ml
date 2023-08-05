@@ -7,9 +7,9 @@ open Memory.Vmem
 open Utils.U16
 open Gbcamel.Logging
 
-type processor = { regs : registers }
+type processor = { regs : registers; halted : bool ref }
 
-let _init_processor = { regs = _init_registers () }
+let _init_processor = { regs = _init_registers (); halted = ref false }
 
 let read_byte cpu mem =
   let instr = read mem (pc cpu.regs) in
@@ -82,6 +82,7 @@ let nop () = 1
 
 (* TODO : Figure out how to implement STOP *)
 let stop _cpu _mem = 1
+let halt cpu = cpu.halted := true; 1
 let j cpu address = cpu.regs.pc := address
 let jr cpu offset = j cpu (u16_add (pc cpu.regs) offset)
 
@@ -310,6 +311,13 @@ let decode_execute cpu mem op' =
               1
           | _ -> decode_error_y ())
       | _ -> decode_error_z ())
+  | 1 -> (match z with 
+    (* 8-bit loading *)
+    | z when z = y -> nop ()
+    | z when z <> 6 -> r_table_write regs mem y ((r_table_read mem z) regs); 1
+    (* Exception (replaces LD (HL), (HL)) *)
+    | 6 -> halt cpu
+    | _ -> decode_error_z ())
   | _ -> decode_error_x ()
 
 (* let decode_execute cpu mem op =
@@ -318,5 +326,6 @@ let decode_execute cpu mem op' =
    | 0x
    | _ -> fatal rc_DecodeError (Printf.sprintf "Failed to decode instruction %x" (int_of_char op)) *)
 let step cpu mem =
+  if !(cpu.halted) then 1 else 
   let opcode = read_byte cpu mem in
   decode_execute cpu mem opcode
