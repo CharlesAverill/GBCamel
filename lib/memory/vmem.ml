@@ -6,10 +6,22 @@ open Gbcamel.Logging
 open Ram
 open Rom
 
-type mem_ctrl = { rom : rom; wram : ram_bank; hram : ram_bank }
+type mem_ctrl = {
+  rom : rom;
+  vram : ram_bank;
+  wram : ram_bank;
+  oam : ram_bank;
+  hram : ram_bank;
+}
 
 let new_mem_ctrl rom =
-  { rom; wram = get_ram_bank wram_bank_size; hram = get_ram_bank hram_size }
+  {
+    rom;
+    vram = get_ram_bank vram_size;
+    wram = get_ram_bank wram_size;
+    oam = get_ram_bank oam_size;
+    hram = get_ram_bank hram_size;
+  }
 
 let read_mem mem address =
   match address with

@@ -1,4 +1,4 @@
 (executable
  (public_name gbcamel)
  (name main)
- (libraries gbcamel gbcamel.memory gbcamel.cpu))
+ (libraries gbcamel gbcamel.utils gbcamel.gbc))

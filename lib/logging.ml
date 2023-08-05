@@ -32,6 +32,7 @@ let rc_Ok = (0, "OK")
 and rc_Error = (1, "ERROR")
 and rc_MemError = (2, "MEMORY ERROR")
 and rc_FileError = (3, "FILE ERROR")
+and rc_ArgError = (4, "ARGUMENT ERROR")
 
 exception LogError of string
 

@@ -1,0 +1,5 @@
+(library
+ (name gbc)
+ (public_name gbcamel.gbc)
+ (modules gbc)
+ (libraries gbcamel.cpu gbcamel.memory))

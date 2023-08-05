@@ -28,8 +28,15 @@ test: fmt
 testv: fmt
 	dune runtest -f
 
+LOG_LEVEL ?= 2
+ROM_FILE ?= roms/tetris.gb
+
 run: build fmt
-	dune exec gbcamel
+	dune exec -- gbcamel -log-level $(LOG_LEVEL) $(ROM_FILE)
+
+raw_run: build fmt
+	clear
+	_build/default/bin/main.exe -log-level $(LOG_LEVEL) $(ROM_FILE)
 
 debug: build fmt
 	ocamldebug _build/default/gbcamel/main.bc
