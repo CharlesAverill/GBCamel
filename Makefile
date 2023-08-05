@@ -3,7 +3,11 @@
 
 default: build
 
-build:
+fmt:
+	dune build @fmt
+	dune promote
+
+build: fmt
 	dune build
 
 install:
@@ -18,10 +22,6 @@ clean:
 	git clean -dfXq
 	mv roms_noclean roms
 
-fmt:
-	dune build @fmt
-	dune promote
-
 test: fmt
 	dune runtest
 
@@ -31,12 +31,12 @@ testf: fmt
 LOG_LEVEL ?= 2
 ROM_FILE ?= roms/tetris.gb
 
-run: build fmt
+run: build
 	dune exec -- gbcamel -log-level $(LOG_LEVEL) $(ROM_FILE)
 
-raw_run: build fmt
+raw_run: build
 	clear
 	_build/default/bin/main.exe -log-level $(LOG_LEVEL) $(ROM_FILE)
 
-debug: build fmt
+debug: build
 	ocamldebug _build/default/gbcamel/main.bc

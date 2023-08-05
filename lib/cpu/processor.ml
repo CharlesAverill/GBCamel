@@ -8,62 +8,73 @@ open Utils.U16
 open Gbcamel.Logging
 
 type processor = { regs : registers; halted : bool ref }
+(** Type for storing information about CPU state *)
 
-let _init_processor = { regs = _init_registers (); halted = ref false }
+(** Returns an initialized CPU state *)
+let _init_processor () = { regs = _init_registers (); halted = ref false }
 
+(** Read the next byte at position (PC) and increment PC *)
 let read_byte cpu mem =
   let instr = read mem (pc cpu.regs) in
   let _ = set_pc cpu.regs (u16_add (pc cpu.regs) 1) in
   instr
 
+(** Read the next word (2 bytes) at position (PC) and increment PC twice *)
 let read_word cpu mem =
   let low = read_byte cpu mem in
   let high = read_byte cpu mem in
   combine high low
 
+(** Check if a specific flag is set in the F register *)
 let is_flag_set cpu flag =
   if r16_of_r8 (f cpu.regs) land flag = 1 then true else false
 
+(** Check if a specific flag is set in the F register - returns an int *)
 let is_flag_set_b cpu flag = if is_flag_set cpu flag then 1 else 0
 
+(** Set a flag in the F register *)
 let set_flag cpu flag value =
   if value then set_f cpu.regs (`R16 (r16_of_r8 (f cpu.regs) lor flag))
   else set_f cpu.regs (`R16 (r16_of_r8 (f cpu.regs) land (flag lxor -1)))
 
-let rp_table_write rp =
-  match rp with
-  | 0 -> set_bc
-  | 1 -> set_de
-  | 2 -> set_hl
-  | 3 -> set_sp
-  | _ ->
-      fatal rc_DecodeError
-        (Printf.sprintf "Tried to decode rp[%d] for writing, range is [0:4]" rp)
-
-let rp_table_read rp =
-  match rp with
+(** Get the register read function corresponding to rp[n] *)
+let rp_table_read n =
+  match n with
   | 0 -> bc
   | 1 -> de
   | 2 -> hl
   | 3 -> sp
   | _ ->
       fatal rc_DecodeError
-        (Printf.sprintf "Tried to decode rp[%d] for reading, range is [0:4]" rp)
+        (Printf.sprintf "Tried to decode rp[%d] for reading, range is [0:4]" n)
 
+(** Get the register write function corresponding to rp[n] *)
+let rp_table_write n =
+  match n with
+  | 0 -> set_bc
+  | 1 -> set_de
+  | 2 -> set_hl
+  | 3 -> set_sp
+  | _ ->
+      fatal rc_DecodeError
+        (Printf.sprintf "Tried to decode rp[%d] for writing, range is [0:4]" n)
+
+(** Get the register read function corresponding to r[n] *)
 let r_table_read mem r =
   match r with
-  | 0 -> b
-  | 1 -> c
-  | 2 -> d
-  | 3 -> e
-  | 4 -> h
-  | 5 -> l
-  | 6 -> fun x -> read mem (hl x)
-  | 7 -> a
+  | 0 -> (false, b)
+  | 1 -> (false, c)
+  | 2 -> (false, d)
+  | 3 -> (false, e)
+  | 4 -> (false, h)
+  | 5 -> (false, l)
+  | 6 -> (true, fun x -> read mem (hl x))
+  | 7 -> (false, a)
   | _ ->
       fatal rc_DecodeError
         (Printf.sprintf "Tried to decode r[%d] for reading, range is [0:7]" r)
 
+(** Get the register write function corresponding to r[n] *)
 let r_table_write regs mem r data =
   match r with
   | 0 -> set_b regs (`R8 data)
@@ -78,14 +89,39 @@ let r_table_write regs mem r data =
       fatal rc_DecodeError
         (Printf.sprintf "Tried to decode r[%d] for reading, range is [0:7]" r)
 
+(** Push 16 bits onto the stack *)
+let push cpu mem data =
+  set_sp cpu.regs (u16_sub (sp cpu.regs) 1);
+  write mem (sp cpu.regs) (high data);
+  set_sp cpu.regs (u16_sub (sp cpu.regs) 1);
+  write mem (sp cpu.regs) (low data)
+
+(** Pop 16 bits from the stack *)
+let pop cpu mem =
+  let low = read mem (sp cpu.regs) in
+  set_sp cpu.regs (u16_add (sp cpu.regs) 1);
+  let high = read mem (sp cpu.regs) in
+  set_sp cpu.regs (u16_add (sp cpu.regs) 1);
+  combine high low
+
+(** No-operation *)
 let nop () = 1
 
 (* TODO : Figure out how to implement STOP *)
 let stop _cpu _mem = 1
-let halt cpu = cpu.halted := true; 1
-let j cpu address = cpu.regs.pc := address
+
+(** Halts the CPU *)
+let halt cpu =
+  cpu.halted := true;
+  1
+
+(** Unconditional jump *)
+let j cpu address = set_pc cpu.regs address
+
+(** Unconditional relative jump*)
 let jr cpu offset = j cpu (u16_add (pc cpu.regs) offset)
 
+(** Conditional jump *)
 let j_cond cpu cond address =
   let cond_met = ref false in
   let _ =
@@ -106,9 +142,108 @@ let j_cond cpu cond address =
   in
   if !cond_met then 4 else 3
 
+(** Conditional relative jump *)
 let jr_cond cpu cond offset = j_cond cpu cond (u16_add (pc cpu.regs) offset)
-let add dest src = dest := u16_add !dest src
 
+(** Return *)
+let ret cpu mem = set_pc cpu.regs (pop cpu mem)
+
+(** (dest += src)%r16 *)
+let add16 dest src = dest := u16_add !dest src
+
+(** ALU table *)
+let alu cpu _mem idx operand =
+  let add_a addval use_carry =
+    let octal_xF = '\017' in
+    let aval, cval =
+      (a cpu.regs, if use_carry && is_flag_set cpu fCAR then '\001' else '\000')
+    in
+    let rawval = r8_add_multi [ aval; addval; cval ] in
+    set_flag cpu fCAR (r16_of_r8 aval + r16_of_r8 addval + r16_of_r8 cval > 0xFF);
+    set_flag cpu fHCR
+      (r8_add_multi [ r8_land aval octal_xF; r8_land addval octal_xF; cval ]
+      > octal_xF);
+    set_flag cpu fSUB false;
+    set_flag cpu fZER (rawval = '\000');
+    set_a cpu.regs (`R8 rawval)
+  and sub_a addval use_carry =
+    let octal_xF = '\017' in
+    let aval, cval =
+      (a cpu.regs, if use_carry && is_flag_set cpu fCAR then '\001' else '\000')
+    in
+    let rawval = r8_sub_multi [ aval; addval; cval ] in
+    set_flag cpu fCAR (r16_of_r8 aval - r16_of_r8 addval - r16_of_r8 cval < 0);
+    set_flag cpu fHCR
+      (r16_of_r8 (r8_land aval octal_xF)
+       - r16_of_r8 (r8_land addval octal_xF)
+       - r16_of_r8 (r8_land cval octal_xF)
+      < 0);
+    set_flag cpu fSUB true;
+    set_flag cpu fZER (rawval = '\000');
+    set_a cpu.regs (`R8 rawval)
+  and and_a andval =
+    let rawval = r8_land (a cpu.regs) andval in
+    set_flag cpu fCAR false;
+    set_flag cpu fHCR true;
+    set_flag cpu fSUB false;
+    set_flag cpu fZER (rawval = '\000');
+    set_a cpu.regs (`R8 rawval)
+  and or_a orval =
+    let rawval = r8_lor (a cpu.regs) orval in
+    set_flag cpu fCAR false;
+    set_flag cpu fHCR false;
+    set_flag cpu fSUB false;
+    set_flag cpu fZER (rawval = '\000');
+    set_a cpu.regs (`R8 rawval)
+  and xor_a xorval =
+    let rawval = r8_lxor (a cpu.regs) xorval in
+    set_flag cpu fCAR false;
+    set_flag cpu fHCR false;
+    set_flag cpu fSUB false;
+    set_flag cpu fZER (rawval = '\000');
+    set_a cpu.regs (`R8 rawval)
+  in
+  let cp_a cpval =
+    let original_aval = a cpu.regs in
+    let _ = sub_a cpval false in
+    set_a cpu.regs (`R8 original_aval)
+  in
+  match idx with
+  (* ADD A, Operand *)
+  | 0 ->
+      add_a operand false;
+      1
+  (* ADC A, Operand *)
+  | 1 ->
+      add_a operand true;
+      1
+  (* SUB A, Operand *)
+  | 2 ->
+      sub_a operand false;
+      1
+  (* SBC A, Operand *)
+  | 3 ->
+      sub_a operand true;
+      1
+  (* AND A, Operand *)
+  | 4 ->
+      and_a operand;
+      1
+  (* XOR A, Operand *)
+  | 5 ->
+      xor_a operand;
+      1
+  (* OR A, Operand *)
+  | 6 ->
+      or_a operand;
+      1
+  (* CP A, Operand *)
+  | 7 ->
+      cp_a operand;
+      1
+  | _ -> 0
+
+(** Leftward bit-rotation operation *)
 let rotate_left cpu n' include_carry update_zero =
   let n = r16_of_r8 n' in
   let msb = n lsr 7 in
@@ -122,6 +257,7 @@ let rotate_left cpu n' include_carry update_zero =
   set_flag cpu fZER (result = 0 && update_zero);
   r8_of_int result
 
+(** Rightward bit-rotation operation *)
 let rotate_right cpu n' include_carry update_zero =
   let n = r16_of_r8 n' in
   let lsb = n land 1 in
@@ -135,6 +271,7 @@ let rotate_right cpu n' include_carry update_zero =
   set_flag cpu fZER (result = 0 && update_zero);
   r8_of_int result
 
+(** General decoder - layout is based on this table - https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html *)
 let decode_execute cpu mem op' =
   let op = r16_of_r8 op' in
   let regs = cpu.regs in
@@ -198,7 +335,7 @@ let decode_execute cpu mem op' =
               3
           (* ADD HL, rp[p] *)
           | 1 ->
-              add regs.hl ((rp_table_read p) regs);
+              add16 regs.hl ((rp_table_read p) regs);
               2
           | _ -> decode_error_q ())
       | 2 -> (
@@ -261,12 +398,14 @@ let decode_execute cpu mem op' =
           | _ -> decode_error_q ())
       | 4 ->
           (* 8-bit INC *)
-          r_table_write regs mem y (r8_add ((r_table_read mem y) regs) '\001');
-          1
+          let read_hl, readf = r_table_read mem y in
+          r_table_write regs mem y (r8_add (readf regs) '\001');
+          if read_hl then 3 else 1
       | 5 ->
           (* 8-bit DEC *)
-          r_table_write regs mem y (r8_sub ((r_table_read mem y) regs) '\001');
-          1
+          let read_hl, readf = r_table_read mem y in
+          r_table_write regs mem y (r8_sub (readf regs) '\001');
+          if read_hl then 3 else 1
       | 6 ->
           (* LD r[y], n *)
           r_table_write regs mem y (read_byte cpu mem);
@@ -311,21 +450,26 @@ let decode_execute cpu mem op' =
               1
           | _ -> decode_error_y ())
       | _ -> decode_error_z ())
-  | 1 -> (match z with 
-    (* 8-bit loading *)
-    | z when z = y -> nop ()
-    | z when z <> 6 -> r_table_write regs mem y ((r_table_read mem z) regs); 1
-    (* Exception (replaces LD (HL), (HL)) *)
-    | 6 -> halt cpu
-    | _ -> decode_error_z ())
+  | 1 -> (
+      match z with
+      (* 8-bit loading *)
+      | z when z = y -> nop ()
+      | z when z <> 6 ->
+          let read_hl, readf = r_table_read mem z in
+          r_table_write regs mem y (readf regs);
+          if read_hl then 2 else 1
+      (* Exception (replaces LD (HL), (HL)) *)
+      | 6 -> halt cpu
+      | _ -> decode_error_z ())
+  (* Operate on accumulator and register/memory location *)
+  | 2 ->
+      let read_hl, readf = r_table_read mem z in
+      (if read_hl then 1 else 0) + alu cpu mem y (readf regs)
   | _ -> decode_error_x ()
 
-(* let decode_execute cpu mem op =
-   match int_of_char op with
-   | 0x00 -> nop ()
-   | 0x
-   | _ -> fatal rc_DecodeError (Printf.sprintf "Failed to decode instruction %x" (int_of_char op)) *)
+(** Performs one step of the decode-execute cycle *)
 let step cpu mem =
-  if !(cpu.halted) then 1 else 
-  let opcode = read_byte cpu mem in
-  decode_execute cpu mem opcode
+  if !(cpu.halted) then 1
+  else
+    let opcode = read_byte cpu mem in
+    decode_execute cpu mem opcode

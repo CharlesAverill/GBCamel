@@ -1,4 +1,4 @@
-(** registers.ml - Definitions for CPU registers *)
+(** registers.ml - Definitions for CPU registers and byte arithmetic *)
 
 open Utils.U16
 
@@ -9,7 +9,7 @@ type r16 = u16
 (** 16-bit register type *)
 
 (** Converts an integer to an r8 *)
-let r8_of_int : int -> r8 = Char.chr
+let r8_of_int n = Char.chr (abs n mod 256)
 
 (** Converts an r8 into an r16 *)
 let r16_of_r8 x = int_of_char x mod u16_max
@@ -19,14 +19,37 @@ let signed_int_of_r8 r =
   let value = r16_of_r8 r in
   if value >= 128 then value - 256 else value
 
+(** Modular addition *)
 let r8_add a b =
   let a', b' = (int_of_char a, int_of_char b) in
   char_of_int ((a' + b') mod 255)
 
+(** Modular subtraction *)
 let r8_sub a b =
   let a', b' = (int_of_char a, int_of_char b) in
   let v = (a' - b') mod 255 in
   if v < 0 then char_of_int (v + 256) else char_of_int v
+
+(** Modular addition on list elements *)
+let r8_add_multi l = List.fold_left r8_add '\000' l
+
+(** Modular subtraction on list elements*)
+let r8_sub_multi l = List.fold_left r8_sub '\000' l
+
+(** Logical AND *)
+let r8_land a' b' =
+  let a, b = (r16_of_r8 a', r16_of_r8 b') in
+  r8_of_int (a land b)
+
+(** Logical OR *)
+let r8_lor a' b' =
+  let a, b = (r16_of_r8 a', r16_of_r8 b') in
+  r8_of_int (a lor b)
+
+(** Logical XOR *)
+let r8_lxor a' b' =
+  let a, b = (r16_of_r8 a', r16_of_r8 b') in
+  r8_of_int (a lxor b)
 
 type registers = {
   af : r16 ref;
