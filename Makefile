@@ -25,7 +25,7 @@ fmt:
 test: fmt
 	dune runtest
 
-testv: fmt
+testf: fmt
 	dune runtest -f
 
 LOG_LEVEL ?= 2

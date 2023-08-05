@@ -33,6 +33,7 @@ and rc_Error = (1, "ERROR")
 and rc_MemError = (2, "MEMORY ERROR")
 and rc_FileError = (3, "FILE ERROR")
 and rc_ArgError = (4, "ARGUMENT ERROR")
+and rc_DecodeError = (5, "DECODE ERROR")
 
 exception LogError of string
 

@@ -1,5 +1,5 @@
 (library
  (name cpu)
  (public_name gbcamel.cpu)
- (modules registers processor)
- (libraries gbcamel.utils))
+ (modules registers processor flags conditions)
+ (libraries gbcamel.utils gbcamel.memory))

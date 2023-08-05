@@ -25,3 +25,7 @@ let rom_read rom address =
     fatal rc_MemError
       (Printf.sprintf "Tried to read from position %d of ROM of size %d" address
          (rom_size rom))
+
+let rom_write rom address data =
+  let _, _, _ = (rom, address, data) in
+  ()

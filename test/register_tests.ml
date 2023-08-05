@@ -123,49 +123,49 @@ let _8bit_writes_regs = _init_registers ()
 let test_set_a () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_a _8bit_writes_regs 237 in
+    (let _ = To_test.set_a _8bit_writes_regs '\237' in
      a _8bit_writes_regs)
 
 let test_set_b () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_b _8bit_writes_regs 237 in
+    (let _ = To_test.set_b _8bit_writes_regs '\237' in
      b _8bit_writes_regs)
 
 let test_set_c () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_c _8bit_writes_regs 237 in
+    (let _ = To_test.set_c _8bit_writes_regs '\237' in
      c _8bit_writes_regs)
 
 let test_set_d () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_d _8bit_writes_regs 237 in
+    (let _ = To_test.set_d _8bit_writes_regs '\237' in
      d _8bit_writes_regs)
 
 let test_set_e () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_e _8bit_writes_regs 237 in
+    (let _ = To_test.set_e _8bit_writes_regs '\237' in
      e _8bit_writes_regs)
 
 let test_set_f () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_f _8bit_writes_regs 237 in
+    (let _ = To_test.set_f _8bit_writes_regs '\237' in
      f _8bit_writes_regs)
 
 let test_set_h () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_h _8bit_writes_regs 237 in
+    (let _ = To_test.set_h _8bit_writes_regs '\237' in
      h _8bit_writes_regs)
 
 let test_set_l () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_l _8bit_writes_regs 237 in
+    (let _ = To_test.set_l _8bit_writes_regs '\237' in
      l _8bit_writes_regs)
 
 (* 16-bit writes *)
