@@ -14,7 +14,8 @@ type mem_ctrl = {
   hram : ram_bank;
 }
 
-let new_mem_ctrl rom =
+let _init_mem_ctrl rom =
+  let _ = _log Log_Debug "Memory Controller Initialized" in
   {
     rom;
     vram = get_ram_bank vram_size;

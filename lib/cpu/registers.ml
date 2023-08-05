@@ -51,6 +51,8 @@ let r8_lxor a' b' =
   let a, b = (r16_of_r8 a', r16_of_r8 b') in
   r8_of_int (a lxor b)
 
+let r8_negate a' = r8_of_int (r16_of_r8 a' lxor -1)
+
 type registers = {
   af : r16 ref;
   bc : r16 ref;
