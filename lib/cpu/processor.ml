@@ -2,5 +2,6 @@
 
 open Registers
 
-let regs = _init_registers ()
-let _ = print_regs regs
+type cpu = { regs : registers }
+
+let _init_cpu = { regs = _init_registers () }

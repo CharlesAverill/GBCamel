@@ -38,42 +38,50 @@ let _8bit_reads_regs = _init_registers ()
 
 let test_a () =
   Alcotest.(check char)
-    "same char" !(_8bit_reads_regs.a)
+    "same char"
+    (high !(_8bit_reads_regs.af))
     (To_test.a _8bit_reads_regs)
+
+let test_f () =
+  Alcotest.(check char)
+    "same char"
+    (low !(_8bit_reads_regs.af))
+    (To_test.f _8bit_reads_regs)
 
 let test_b () =
   Alcotest.(check char)
-    "same char" !(_8bit_reads_regs.b)
+    "same char"
+    (high !(_8bit_reads_regs.bc))
     (To_test.b _8bit_reads_regs)
 
 let test_c () =
   Alcotest.(check char)
-    "same char" !(_8bit_reads_regs.c)
+    "same char"
+    (low !(_8bit_reads_regs.bc))
     (To_test.c _8bit_reads_regs)
 
 let test_d () =
   Alcotest.(check char)
-    "same char" !(_8bit_reads_regs.d)
+    "same char"
+    (high !(_8bit_reads_regs.de))
     (To_test.d _8bit_reads_regs)
 
 let test_e () =
   Alcotest.(check char)
-    "same char" !(_8bit_reads_regs.e)
+    "same char"
+    (low !(_8bit_reads_regs.de))
     (To_test.e _8bit_reads_regs)
-
-let test_f () =
-  Alcotest.(check char)
-    "same char" !(_8bit_reads_regs.f)
-    (To_test.f _8bit_reads_regs)
 
 let test_h () =
   Alcotest.(check char)
-    "same char" !(_8bit_reads_regs.h)
+    "same char"
+    (high !(_8bit_reads_regs.hl))
     (To_test.h _8bit_reads_regs)
 
 let test_l () =
   Alcotest.(check char)
-    "same char" !(_8bit_reads_regs.l)
+    "same char"
+    (low !(_8bit_reads_regs.hl))
     (To_test.l _8bit_reads_regs)
 
 (* 16-bit reads *)
@@ -81,26 +89,22 @@ let _16bit_reads_regs = _init_registers ()
 
 let test_af () =
   Alcotest.(check int)
-    "same int"
-    (combine (a _16bit_reads_regs) (f _16bit_reads_regs))
+    "same int" !(_16bit_reads_regs.af)
     (To_test.af _16bit_reads_regs)
 
 let test_bc () =
   Alcotest.(check int)
-    "same int"
-    (combine (b _16bit_reads_regs) (c _16bit_reads_regs))
+    "same int" !(_16bit_reads_regs.bc)
     (To_test.bc _16bit_reads_regs)
 
 let test_de () =
   Alcotest.(check int)
-    "same int"
-    (combine (d _16bit_reads_regs) (e _16bit_reads_regs))
+    "same int" !(_16bit_reads_regs.de)
     (To_test.de _16bit_reads_regs)
 
 let test_hl () =
   Alcotest.(check int)
-    "same int"
-    (combine (h _16bit_reads_regs) (l _16bit_reads_regs))
+    "same int" !(_16bit_reads_regs.hl)
     (To_test.hl _16bit_reads_regs)
 
 let test_sp () =
@@ -119,49 +123,49 @@ let _8bit_writes_regs = _init_registers ()
 let test_set_a () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_a _8bit_writes_regs '\237' in
+    (let _ = To_test.set_a _8bit_writes_regs 237 in
      a _8bit_writes_regs)
 
 let test_set_b () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_b _8bit_writes_regs '\237' in
+    (let _ = To_test.set_b _8bit_writes_regs 237 in
      b _8bit_writes_regs)
 
 let test_set_c () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_c _8bit_writes_regs '\237' in
+    (let _ = To_test.set_c _8bit_writes_regs 237 in
      c _8bit_writes_regs)
 
 let test_set_d () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_d _8bit_writes_regs '\237' in
+    (let _ = To_test.set_d _8bit_writes_regs 237 in
      d _8bit_writes_regs)
 
 let test_set_e () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_e _8bit_writes_regs '\237' in
+    (let _ = To_test.set_e _8bit_writes_regs 237 in
      e _8bit_writes_regs)
 
 let test_set_f () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_f _8bit_writes_regs '\237' in
+    (let _ = To_test.set_f _8bit_writes_regs 237 in
      f _8bit_writes_regs)
 
 let test_set_h () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_h _8bit_writes_regs '\237' in
+    (let _ = To_test.set_h _8bit_writes_regs 237 in
      h _8bit_writes_regs)
 
 let test_set_l () =
   Alcotest.(check char)
     "same char" '\237'
-    (let _ = To_test.set_l _8bit_writes_regs '\237' in
+    (let _ = To_test.set_l _8bit_writes_regs 237 in
      l _8bit_writes_regs)
 
 (* 16-bit writes *)

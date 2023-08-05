@@ -3,67 +3,67 @@
 open Utils.U16
 
 type r8 = char
-type r16 = u16
+(** 8-bit register type *)
 
+type r16 = u16
+(** 16-bit register type *)
+
+(** Converts an integer to an r8 *)
 let r8_of_int : int -> r8 = Char.chr
 
 type registers = {
-  a : r8 ref;
-  b : r8 ref;
-  c : r8 ref;
-  d : r8 ref;
-  e : r8 ref;
-  f : r8 ref;
-  h : r8 ref;
-  l : r8 ref;
+  af : r16 ref;
+  bc : r16 ref;
+  de : r16 ref;
+  hl : r16 ref;
   sp : r16 ref;
   pc : r16 ref;
 }
+(** Struct for CPU registers - 8-bit registers are an abstraction *)
 
-let a regs = !(regs.a)
-let b regs = !(regs.b)
-let c regs = !(regs.c)
-let d regs = !(regs.d)
-let e regs = !(regs.e)
-let f regs = !(regs.f)
-let h regs = !(regs.h)
-let l regs = !(regs.l)
+(** Get the highest 8 bits of an r16 *)
+let high x : r8 = char_of_int ((x lsr 8) land 0xFF)
+
+(** Get the lowest 8 bits of an r16*)
+let low x : r8 = char_of_int (x land 0xFF)
+
+(* Getter functions to minimize interactions with refs *)
+let a regs = high !(regs.af)
+let f regs = low !(regs.af)
+let b regs = high !(regs.bc)
+let c regs = low !(regs.bc)
+let d regs = high !(regs.de)
+let e regs = low !(regs.de)
+let h regs = high !(regs.hl)
+let l regs = low !(regs.hl)
+let af regs = !(regs.af)
+let bc regs = !(regs.bc)
+let de regs = !(regs.de)
+let hl regs = !(regs.hl)
 let sp regs = !(regs.sp)
 let pc regs = !(regs.pc)
-let combine x y = (Char.code x lsl 8) lor Char.code y
-let af regs = combine (a regs) (f regs)
-let bc regs = combine (b regs) (c regs)
-let de regs = combine (d regs) (e regs)
-let hl regs = combine (h regs) (l regs)
-let high x : r8 = char_of_int ((x lsr 8) land 0xFF)
-let low x : r8 = char_of_int (x land 0xFF)
-let set_a regs a = regs.a := a
-let set_b regs b = regs.b := b
-let set_c regs c = regs.c := c
-let set_d regs d = regs.d := d
-let set_e regs e = regs.e := e
-let set_f regs f = regs.f := f
-let set_h regs h = regs.h := h
-let set_l regs l = regs.l := l
+
+(* Setter functions to minimize interactions with refs*)
+let set_high r v =
+  r := u16_lshift (v land 0xFF) 8 lor (!r land 0xFF) land u16_max
+
+let set_low r v = r := !r land 0xFF00 lor (v land 0xFF) land u16_max
+let set_a regs a = set_high regs.af a
+let set_f regs f = set_low regs.af f
+let set_b regs b = set_high regs.bc b
+let set_c regs c = set_low regs.bc c
+let set_d regs d = set_high regs.de d
+let set_e regs e = set_low regs.de e
+let set_h regs h = set_high regs.hl h
+let set_l regs l = set_low regs.hl l
+let set_af regs af = regs.af := af
+let set_bc regs bc = regs.bc := bc
+let set_de regs de = regs.de := de
+let set_hl regs hl = regs.hl := hl
 let set_sp regs sp = regs.sp := sp
 let set_pc regs pc = regs.pc := pc
 
-let set_af regs af =
-  regs.a := high af;
-  regs.f := low af
-
-let set_bc regs bc =
-  regs.b := high bc;
-  regs.c := low bc
-
-let set_de regs de =
-  regs.d := high de;
-  regs.e := low de
-
-let set_hl regs hl =
-  regs.h := high hl;
-  regs.l := low hl
-
+(** Formats a register set as a string *)
 let string_of_regs regs =
   Printf.sprintf
     "AF: 0x%04x\n\
@@ -93,18 +93,24 @@ let string_of_regs regs =
     (int_of_char (l regs))
     (sp regs) (pc regs)
 
+(** Prints a string representation of a set of registers *)
 let print_regs regs = print_endline (string_of_regs regs)
 
+(** Default-initialized register contents after GB BIOS runs *)
 let _init_registers () =
-  {
-    a = ref (r8_of_int 0x01);
-    b = ref (r8_of_int 0x00);
-    c = ref (r8_of_int 0x13);
-    d = ref (r8_of_int 0x00);
-    e = ref (r8_of_int 0xD8);
-    f = ref (r8_of_int 0xB0);
-    h = ref (r8_of_int 0x01);
-    l = ref (r8_of_int 0x4D);
-    sp = ref 0xFFFE;
-    pc = ref 0x0150;
-  }
+  let out =
+    { af = ref 0; bc = ref 0; de = ref 0; hl = ref 0; sp = ref 0; pc = ref 0 }
+  in
+  let _set_defaults =
+    set_a out 0x01;
+    set_f out 0xB0;
+    set_b out 0x00;
+    set_c out 0x13;
+    set_d out 0x00;
+    set_e out 0xD8;
+    set_h out 0x01;
+    set_l out 0x4D;
+    set_sp out 0xFFFE;
+    set_pc out 0x0150
+  in
+  out

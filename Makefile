@@ -25,6 +25,9 @@ fmt:
 test: fmt
 	dune runtest
 
+testv: fmt
+	dune runtest -f
+
 run: build fmt
 	dune exec gbcamel
 
