@@ -2,7 +2,7 @@
 
 ![logo](media/logo_thin.png)
 
-A Gameboy emulator written in OCaml
+A Game Boy Color Emulator written in OCaml
 
 ## Resources
 
