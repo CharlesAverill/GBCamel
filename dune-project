@@ -23,6 +23,7 @@
   (core (>= :"0.15.1")) 
   dune
   (core_unix (>= :"0.15.2")) 
+  (base64 (>= :"3.5.1"))
   (alcotest (and (>= :"1.7.0") (or :with-doc :with-test))) 
   (odoc (and (>= :"2.2.0") :with-doc))
   (ocamlformat (and (>= :"0.25.1") (or :with-doc :with-test)))

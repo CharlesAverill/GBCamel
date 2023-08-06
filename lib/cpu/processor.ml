@@ -475,7 +475,11 @@ let decode_execute cpu op' =
   and z = 0b00000111 land op in
   let p = (0b110 land y) lsr 1 and q = 0b1 land y in
 
-  let _ = (x, y, z, p, q, cpu) in
+  let _ =
+    _log Log_Debug
+      (Printf.sprintf "Instruction 0x%x, (x, y, z, p, q) = (%d, %d, %d, %d, %d)"
+         op x y z p q)
+  in
 
   let decode_error_x () =
     fatal rc_DecodeError (Printf.sprintf "Decoded x as %d, range is [0:4]" x)
@@ -626,7 +630,8 @@ let decode_execute cpu op' =
                 1
             | 4 ->
                 (* DAA  *)
-                fatal rc_ImplementationError "DAA not yet implemented"
+                _log Log_Error "DAA not yet implemented";
+                1
             | 5 ->
                 (* CPL  *)
                 set_a regs (`R16 (r16_of_r8 (r8_negate (a regs))));
@@ -716,7 +721,9 @@ let decode_execute cpu op' =
                   ret cpu;
                   4
               (* RETI *)
-              | 1 -> fatal rc_ImplementationError "RETI not yet implemented"
+              | 1 ->
+                  _log Log_Error "RETI not yet implemented";
+                  1
               (* JP HL *)
               | 2 ->
                   jp cpu (hl cpu.regs);
@@ -758,9 +765,13 @@ let decode_execute cpu op' =
             (* CB prefix *)
             | y when y >= 1 && y <= 5 -> _CB_decoder ()
             (* DI *)
-            | 6 -> fatal rc_ImplementationError "DI not yet implemented"
+            | 6 ->
+                _log Log_Error "DI not yet implemented";
+                1
             (* EI *)
-            | 7 -> fatal rc_ImplementationError "EI not yet implemented"
+            | 7 ->
+                _log Log_Error "EI not yet implemented";
+                1
             | _ -> decode_error_y ())
         | 4 -> (
             (* Conditional call *)

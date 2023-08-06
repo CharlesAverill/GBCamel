@@ -34,7 +34,6 @@ let string_of_bank = Bytes.to_string
 
 (** Reads ram[address] *)
 let ram_read ram address =
-  let _ = _log Log_Debug (Printf.sprintf "read %d" address) in
   if address_in_bounds ram address then Bytes.get ram address
   else
     fatal rc_MemError
@@ -43,7 +42,6 @@ let ram_read ram address =
 
 (** Performs the assignment ram[address] := data *)
 let ram_write ram address data =
-  _log Log_Debug (Printf.sprintf "write %d %c" address data);
   if address_in_bounds ram address then Bytes.set ram address data
   else
     fatal rc_MemError

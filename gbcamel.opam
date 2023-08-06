@@ -13,6 +13,7 @@ depends: [
   "core" { >= "0.15.1"}
   "dune" {>= "3.9"}
   "core_unix" { >= "0.15.2"}
+  "base64" { >= "3.5.1"}
   "alcotest" { >= "1.7.0" & (with-doc | with-test)}
   "odoc" { >= "2.2.0" & with-doc}
   "ocamlformat" { >= "0.25.1" & (with-doc | with-test)}
