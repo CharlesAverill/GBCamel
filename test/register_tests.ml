@@ -208,6 +208,20 @@ let test_set_pc () =
      pc _16bit_writes_regs)
 
 let test_string_of_regs () =
+  let testregs =
+    let out = _init_registers () in
+    set_a out (`R16 0x01);
+    set_f out (`R16 0xB0);
+    set_b out (`R16 0x00);
+    set_c out (`R16 0x13);
+    set_d out (`R16 0x00);
+    set_e out (`R16 0xD8);
+    set_h out (`R16 0x01);
+    set_l out (`R16 0x4D);
+    set_sp out 0xFFFE;
+    set_pc out 0x0150;
+    out
+  in
   Alcotest.(check string)
     "same string"
     "AF: 0x01b0\n\
@@ -224,7 +238,7 @@ let test_string_of_regs () =
      \tL: 0x4d\n\
      SP: 0xfffe\n\
      PC: 0x0150"
-    (To_test.string_of_regs (_init_registers ()))
+    (To_test.string_of_regs testregs)
 
 (* Run tests *)
 let () =

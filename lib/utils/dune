@@ -1,4 +1,5 @@
 (library
  (name utils)
  (public_name gbcamel.utils)
- (modules u16))
+ (modules u16 b64_decode)
+ (libraries base64))

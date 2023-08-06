@@ -1,6 +1,6 @@
 (** mbc.ml - Definitions for the memory-bank controller type *)
 
-(** https://gbdev.gg8.se/wiki/articles/Memory_Bank_Controllers *)
+(** {{: https://gbdev.gg8.se/wiki/articles/Memory_Bank_Controllers } https://gbdev.gg8.se/wiki/articles/Memory_Bank_Controllers} *)
 
 open Utils.U16
 
