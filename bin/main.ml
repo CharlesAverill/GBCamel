@@ -5,6 +5,7 @@ open Gbc
 
 let main () =
   let args = parse_arguments () in
-  init_gbc args.rom_file
+  let gbc = init_gbc args.rom_file in
+  run gbc
 
 let _ = main ()

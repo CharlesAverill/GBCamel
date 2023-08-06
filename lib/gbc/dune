@@ -2,4 +2,4 @@
  (name gbc)
  (public_name gbcamel.gbc)
  (modules gbc)
- (libraries gbcamel.cpu gbcamel.memory))
+ (libraries gbcamel.cpu gbcamel.memory core_unix core_unix.core_thread))

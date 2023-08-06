@@ -823,7 +823,7 @@ let decode_execute cpu op' =
   main_decoder ()
 
 (** Performs one step of the decode-execute cycle *)
-let step cpu =
+let de_step cpu =
   if !(cpu.halted) then 1
   else
     let opcode = read_byte cpu in

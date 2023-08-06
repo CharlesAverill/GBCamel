@@ -20,3 +20,6 @@ let wram_bank_size = 4096
 
 (** 32 KB of Working RAM - 2 GB banks and 6 GBC banks *)
 let wram_size = 4096 * 8
+
+let _CLOCK_SPEED = 4194304
+let _FRAME_RATE = 60
