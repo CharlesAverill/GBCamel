@@ -82,4 +82,4 @@ push: cleandocs build
 		echo "Error: Please provide a valid commit message."; \
 		exit 1; \
 	fi; \
-	git add . && git commit -m "$input" && git push origin main
+	git add . && git commit -m "$$input" && git push origin main
