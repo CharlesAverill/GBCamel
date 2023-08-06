@@ -43,7 +43,16 @@ debug: build
 	opam exec -- ocamldebug _build/default/gbcamel/main.bc
 
 DOCS_PATH=docs/
-DOCS_INDEX_TITLE=GBCamel - A Game Boy Color Emulator written in OCaml
+DOCS_NAME=GBCamel
+DOCS_DESCR=A Game Boy Color Emulator written in OCaml
+DOCS_INDEX_TITLE=$(DOCS_NAME) - $(DOCS_DESCR)
+define DOCS_EMBED
+<meta content="$(DOCS_NAME)" property="og:title" />\
+<meta content="$(DOCS_DESCR)" property="og:description" />\
+<meta content="https://charlesaverill.github.io/GBCamel" property="og:url" />\
+<meta content="https://charlesaverill.github.io/GBCamel/media/logo_thin.png" property="og:image" />\
+<meta content="#2d3192" data-react-helmet="true" name="theme-color" />
+endef
 
 cleandocs:
 	if [ ! -d $(DOCS_PATH) ]; then \
@@ -61,10 +70,11 @@ docs: cleandocs build
 	@echo "Preparing Index\n--------------"
 	# Header
 	sed -i 's/<title>.*<\/title>/<title>$(DOCS_INDEX_TITLE)<\/title>/g' $(DOCS_PATH)index.html
-	sed -i 's/<\/head>/<link rel="icon" href="media\/favicon.ico" type="image\/x-icon">/g' $(DOCS_PATH)index.html
+	sed -i 's@</head>@<link rel="icon" href="media/favicon.ico" type="image/x-icon">\n</head>@g' $(DOCS_PATH)index.html
+	sed -i 's@</head>@$(DOCS_EMBED)\n</head>@g' $(DOCS_PATH)index.html
 	sed -i 's/..\/odoc.support/odoc.support/g' $(DOCS_PATH)index.html
 	# Body
-	sed -i 's/<nav class="odoc-nav">.*<\/nav>//g' $(DOCS_PATH)index.html
+	sed -i 's@<nav class="odoc-nav">.*gbcamel</nav>@@g' $(DOCS_PATH)index.html
 
 push: cleandocs build
 	@read -p "Commit message: " input; \
@@ -72,4 +82,4 @@ push: cleandocs build
 		echo "Error: Please provide a valid commit message."; \
 		exit 1; \
 	fi; \
-	git add . && git commit -m "$input" && git push origin main
+	git add . && git commit -m "$$input" && git push origin main

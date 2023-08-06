@@ -2,4 +2,20 @@
 
 {%html: <img src="media/logo_thin.png" style="width: 100%"/> %}
 
+GBCamel is a Game Boy Color emulator written in OCaml. 
+
+{1 Installation}
+
+Assuming your system is set up with {{: https://ocaml.org/docs/up-and-running} OCaml}
+and {{: https://dune.build/install} dune}, you may install dependencies with 
+{[ opam install . --deps-only --with-test ]}.
+Now all that is needed to build the emulator
+is to run [make]. To install to your system, [make install].
+
+{1 Usage}
+
+[gbcamel ROM_FILE.gb[c]] will immediately boot the Game Boy Color's BIOS and 
+
+[gbcamel --help] will have the most up-to-date usage information. 
+
 {{: module/} Module Documentation}

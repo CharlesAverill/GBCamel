@@ -4,6 +4,8 @@
 
 A Game Boy Color Emulator written in OCaml
 
+See documentation and installation instructions [here](https://charlesaverill.github.io/GBCamel)
+
 ## Resources
 
 - [Gameboy Crust](https://github.com/mattbruv/Gameboy-Crust) ([blog post](https://mattbruv.github.io/gameboy-crust/)) - A large portion of comments and general architectural notes were pulled from this project (MIT - Copyright (c) 2017 Matt P)
