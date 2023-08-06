@@ -149,17 +149,4 @@ let _init_registers () =
   let out =
     { af = ref 0; bc = ref 0; de = ref 0; hl = ref 0; sp = ref 0; pc = ref 0 }
   in
-  (*
-  let _set_defaults =
-    set_a out (`R16 0x01);
-    set_f out (`R16 0xB0);
-    set_b out (`R16 0x00);
-    set_c out (`R16 0x13);
-    set_d out (`R16 0x00);
-    set_e out (`R16 0xD8);
-    set_h out (`R16 0x01);
-    set_l out (`R16 0x4D);
-    set_sp out 0xFFFE;
-    set_pc out 0x0150
-  in *)
   out
