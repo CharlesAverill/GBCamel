@@ -50,7 +50,7 @@ define DOCS_EMBED
 <meta content="$(DOCS_NAME)" property="og:title" />\
 <meta content="$(DOCS_DESCR)" property="og:description" />\
 <meta content="https://charlesaverill.github.io/GBCamel" property="og:url" />\
-<meta content="https://charlesaverill.github.io/GBCamel/media/logo_thin.png" property="og:image" />\
+<meta content="https://charlesaverill.github.io/GBCamel/media/favicon.png" property="og:image" />\
 <meta content="#2d3192" data-react-helmet="true" name="theme-color" />
 endef
 

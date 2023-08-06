@@ -8,9 +8,8 @@ GBCamel is a Game Boy Color emulator written in OCaml.
 
 Assuming your system is set up with {{: https://ocaml.org/docs/up-and-running} OCaml}
 and {{: https://dune.build/install} dune}, you may install dependencies with 
-{[ opam install . --deps-only --with-test ]}.
-Now all that is needed to build the emulator
-is to run [make]. To install to your system, [make install].
+{[ opam install . --deps-only --with-test ]}
+Now, to build the emulator, run [make]. To install to your system, [make install].
 
 {1 Usage}
 
