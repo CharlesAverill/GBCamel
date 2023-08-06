@@ -1,6 +1,6 @@
 # GBCamel
 
-![logo](media/logo_thin.png)
+![logo](docs/media/logo_thin.png)
 
 A Game Boy Color Emulator written in OCaml
 
