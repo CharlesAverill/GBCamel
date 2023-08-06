@@ -1,0 +1,5 @@
+(library
+ (name mbcs)
+ (public_name gbcamel.memory.mbcs)
+ (modules mbc mbc0 mbc1 mbc2 mbc3 mbc5)
+ (libraries gbcamel.utils))

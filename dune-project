@@ -18,4 +18,4 @@
  (name gbcamel)
  (synopsis "A Gameboy Color emulator written in OCaml")
  (description "A Gameboy Color emulator written in OCaml")
- (depends ocaml core dune core_unix core_thread (alcotest :with-test)))
+ (depends ocaml core dune core_unix core_thread (alcotest :with-test) (odoc :with-doc)))

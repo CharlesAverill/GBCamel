@@ -2,4 +2,4 @@
  (name memory)
  (public_name gbcamel.memory)
  (modules limits ram rom memmap vmem)
- (libraries gbcamel))
+ (libraries gbcamel gbcamel.memory.mbcs))

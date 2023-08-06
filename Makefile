@@ -21,6 +21,7 @@ clean:
 	dune clean
 	git clean -dfXq
 	mv roms_noclean roms
+	rm -rf docs
 
 test: fmt
 	dune runtest
@@ -40,3 +41,12 @@ raw_run: build
 
 debug: build
 	ocamldebug _build/default/gbcamel/main.bc
+
+DOCS_PATH=docs/
+
+docs: build
+	if [ ! -d $(DOCS_PATH) ]; then \
+		mkdir $(DOCS_PATH); \
+	fi
+	dune build @doc
+	mv _build/default/_doc/_html/* $(DOCS_PATH)

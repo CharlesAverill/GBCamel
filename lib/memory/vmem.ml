@@ -51,12 +51,13 @@ let write mem address data =
   | address when address >= _VRAM_START && address <= _VRAM_END ->
       ram_write mem.vram (address - _VRAM_START) data
   | address when address >= _ERAM_START && address <= _ERAM_END ->
-      fatal rc_MemError "ERAM write not implemented"
+      rom_write mem.rom (address - _ERAM_START) data
   | address when address >= _WRAM_START && address <= _WRAM_END ->
       ram_write mem.wram (address - _WRAM_START) data
   | address when address >= _ECHO_START && address <= _ECHO_END ->
       fatal rc_MemError
-        (Printf.sprintf "Illegal memory write attempt at address %x" address)
+        (Printf.sprintf "Illegal ECHO memory write attempt at address %x"
+           address)
   | address when address >= _OAM_START && address <= _OAM_END ->
       ram_write mem.oam (address - _OAM_START) data
   | address when address >= _HRAM_START && address <= _HRAM_END ->
