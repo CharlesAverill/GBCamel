@@ -1,6 +1,6 @@
 (** mbc0.ml - Definitions for MBC0, not really an MBC *)
 
-(** https://gbdev.gg8.se/wiki/articles/Memory_Bank_Controllers#None_.2832KByte_ROM_only.29 *)
+(** {{: https://gbdev.gg8.se/wiki/articles/Memory_Bank_Controllers#None_.2832KByte_ROM_only.29} https://gbdev.gg8.se/wiki/articles/Memory_Bank_Controllers#None_.2832KByte_ROM_only.29 } *)
 
 open Mbc
 open Utils.U16

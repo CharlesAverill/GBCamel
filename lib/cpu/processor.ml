@@ -462,7 +462,7 @@ let rot cpu idx operand =
 
 (** General decoder
 
-    Layout is based on this table - https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html 
+    Layout is based on {{: https://gb-archive.github.io/salvage/decoding_gbz80_opcodes/Decoding%20Gamboy%20Z80%20Opcodes.html }this table}
 
     Returns the number of cycles taken to execute the provided instruction
 *)

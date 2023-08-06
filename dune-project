@@ -1,4 +1,4 @@
-(lang dune 3.7)
+(lang dune 3.9)
 
 (name gbcamel)
 
@@ -18,4 +18,13 @@
  (name gbcamel)
  (synopsis "A Gameboy Color emulator written in OCaml")
  (description "A Gameboy Color emulator written in OCaml")
- (depends ocaml core dune core_unix core_thread (alcotest :with-test) (odoc :with-doc)))
+ (depends 
+  (ocaml (>= :"4.13.1")) 
+  (core (>= :"0.15.1")) 
+  dune
+  (core_unix (>= :"0.15.2")) 
+  (alcotest (and (>= :"1.7.0") (or :with-doc :with-test))) 
+  (odoc (and (>= :"2.2.0") :with-doc))
+  (ocamlformat (and (>= :"0.25.1") (or :with-doc :with-test)))
+ )
+)
