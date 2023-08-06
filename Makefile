@@ -48,7 +48,7 @@ cleandocs:
 	if [ ! -d $(DOCS_PATH) ]; then \
 		mkdir $(DOCS_PATH); \
 	fi
-	rm -rf $(DOCS_PATH)gbcamel $(DOCS_PATH)odoc.support $(DOCS_PATH)index.html
+	rm -rf $(DOCS_PATH)gbcamel $(DOCS_PATH)docs $(DOCS_PATH)odoc.support $(DOCS_PATH)index.html
 
 docs: cleandocs build
 	opam exec -- dune build @doc
@@ -56,6 +56,7 @@ docs: cleandocs build
 	mv $(DOCS_PATH)gbcamel/index.html $(DOCS_PATH)gbcamel/module.html
 	rm -f $(DOCS_PATH)index.html
 	cp $(DOCS_PATH)gbcamel/gbcamel.html $(DOCS_PATH)index.html
+	mv $(DOCS_PATH)gbcamel $(DOCS_PATH)docs
 
 push: cleandocs build
 	@read -p "Commit message: " input; \
