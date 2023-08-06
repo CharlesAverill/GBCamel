@@ -2,7 +2,7 @@
 
 {%html: <img src="media/logo_thin.png" style="width: 100%"/> %}
 
-GBCamel is a Game Boy Color emulator written in OCaml. 
+GBCamel is a Game Boy Color emulator written in OCaml. Source is available {{: https://github.com/CharlesAverill/GBCamel.git } here}.
 
 {1 Installation}
 
@@ -17,4 +17,6 @@ Now, to build the emulator, run [make]. To install to your system, [make install
 
 [gbcamel --help] will have the most up-to-date usage information. 
 
-{{: module/} Module Documentation}
+{1 Documentation}
+
+Code documentation is available {{: module/} here}. (TODO : add architectural documentation)
