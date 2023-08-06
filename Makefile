@@ -55,7 +55,7 @@ docs: cleandocs build
 	mv -f _build/default/_doc/_html/* $(DOCS_PATH)
 	mv $(DOCS_PATH)gbcamel/index.html $(DOCS_PATH)gbcamel/module.html
 	rm -f $(DOCS_PATH)index.html
-	ln -s $(DOCS_PATH)gbcamel/gbcamel.html $(DOCS_PATH)index.html
+	cp $(DOCS_PATH)gbcamel/gbcamel.html $(DOCS_PATH)index.html
 
 push: cleandocs build
 	@read -p "Commit message: " input; \
