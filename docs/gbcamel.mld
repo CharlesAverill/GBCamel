@@ -1,1 +1,5 @@
-{0 Index}
+{0 GBCamel}
+
+{%html: <img src="media/logo_thin.png" style="width: 100%"/> %}
+
+{{: module/} Module Documentation}
