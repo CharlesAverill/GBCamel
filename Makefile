@@ -62,6 +62,7 @@ docs: cleandocs build
 	# Header
 	sed -i 's/<title>.*<\/title>/<title>$(DOCS_INDEX_TITLE)<\/title>/g' $(DOCS_PATH)index.html
 	sed -i 's/<\/head>/<link rel="icon" href="media\/favicon.ico" type="image\/x-icon">/g' $(DOCS_PATH)index.html
+	sed -i 's/..\/odoc.support/odoc.support/g' $(DOCS_PATH)index.html
 	# Body
 	sed -i 's/<nav class="odoc-nav">.*<\/nav>//g' $(DOCS_PATH)index.html
 
