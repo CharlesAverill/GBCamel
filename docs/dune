@@ -1,0 +1,3 @@
+(documentation
+ (package gbcamel)
+ (mld_files gbcamel))
