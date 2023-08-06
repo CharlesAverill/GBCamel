@@ -44,9 +44,23 @@ debug: build
 
 DOCS_PATH=docs/
 
-docs: build
+cleandocs:
 	if [ ! -d $(DOCS_PATH) ]; then \
 		mkdir $(DOCS_PATH); \
 	fi
+	rm -rf $(DOCS_PATH)gbcamel $(DOCS_PATH)odoc.support $(DOCS_PATH)index.html
+
+docs: cleandocs build
 	opam exec -- dune build @doc
-	mv _build/default/_doc/_html/* $(DOCS_PATH)
+	mv -f _build/default/_doc/_html/* $(DOCS_PATH)
+	mv $(DOCS_PATH)gbcamel/index.html $(DOCS_PATH)gbcamel/module.html
+	rm -f $(DOCS_PATH)index.html
+	ln -s $(DOCS_PATH)gbcamel/gbcamel.html $(DOCS_PATH)index.html
+
+push: cleandocs build
+	@read -p "Commit message: " input; \
+	if [ -z "$input" ]; then \
+		echo "Error: Please provide a valid commit message."; \
+		exit 1; \
+	fi; \
+	git add . && git commit -m "$input" && git push origin main
