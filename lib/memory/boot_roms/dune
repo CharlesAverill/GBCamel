@@ -1,0 +1,5 @@
+(library
+ (name boot_roms)
+ (public_name gbcamel.memory.boot_roms)
+ (modules device_boot_rom_select dmg_boot mgb_boot cgb_boot sameboy_cgb_boot)
+ (libraries gbcamel gbcamel.utils))

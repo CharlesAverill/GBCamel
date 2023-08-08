@@ -3,11 +3,13 @@
 open Memmap
 open Limits
 open Gbcamel.Logging
-open Gbc_boot_rom
+open Boot_roms.Device_boot_rom_select
 open Ram
 open Rom
+open Utils.U16
 
 type mem_ctrl = {
+  model : model;
   boot_rom_enabled : bool ref;
   boot_rom : bytes;
   rom : rom;
@@ -17,11 +19,13 @@ type mem_ctrl = {
   hram : ram_bank;
 }
 
-let _init_mem_ctrl rom =
+let _init_mem_ctrl model_str rom =
   let _ = _log Log_Debug "Memory Controller Initialized" in
+  let model, boot_rom = get_device_and_boot_rom model_str in
   {
+    model;
     boot_rom_enabled = ref true;
-    boot_rom = gbc_boot_rom ();
+    boot_rom = boot_rom ();
     rom;
     vram = get_ram_bank vram_size;
     wram = get_ram_bank wram_size;
@@ -30,10 +34,14 @@ let _init_mem_ctrl rom =
   }
 
 let read mem address =
-  let _ = _log Log_Debug (Printf.sprintf "read %d" address) in
-  if !(mem.boot_rom_enabled) then ram_read mem.boot_rom address
-  else
+  let answ =
     match address with
+    | address when !(mem.boot_rom_enabled) && address < 0x100 ->
+        ram_read mem.boot_rom address
+    | address
+      when !(mem.boot_rom_enabled) && address >= 0x200 && address < 0x900
+           && is_cgb mem.model ->
+        ram_read mem.boot_rom address
     | address when address >= _ROM_START && address <= _ROM_BANK_END ->
         rom_read mem.rom address
     | address when address >= _VRAM_START && address <= _VRAM_END ->
@@ -51,12 +59,17 @@ let read mem address =
     | _ ->
         fatal rc_MemError
           (Printf.sprintf "Invalid virtual memory read at address %x" address)
+  in
+  _log Log_Debug
+    (Printf.sprintf "read %x @ 0x%x/%d" (u16_of_u8 answ) address address);
+  answ
 
 let write mem address data =
-  _log Log_Debug (Printf.sprintf "write %d %c" address data);
+  _log Log_Debug
+    (Printf.sprintf "write %x @ 0x%x/%d" (u16_of_u8 data) address address);
   if !(mem.boot_rom_enabled) && address = 0xFF50 then (
     mem.boot_rom_enabled := false;
-    _log Log_Debug "Boot sequence succeeded";
+    _log Log_Info "Boot sequence succeeded";
     exit 0)
   else
     match address with

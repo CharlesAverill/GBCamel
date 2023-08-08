@@ -21,7 +21,6 @@ clean:
 	opam exec -- dune clean
 	git clean -dfXq
 	mv roms_noclean roms
-	rm -rf docs
 
 test: fmt
 	opam exec -- dune runtest
@@ -31,9 +30,13 @@ testf: fmt
 
 LOG_LEVEL ?= 2
 ROM_FILE ?= roms/tetris.gb
+MODEL ?= DMG
+ifdef STEP
+  STEP_OPT = -step
+endif
 
 run: build
-	opam exec -- dune exec -- gbcamel -log-level $(LOG_LEVEL) $(ROM_FILE)
+	opam exec -- dune exec -- gbcamel -log-level $(LOG_LEVEL) -model $(MODEL) $(ROM_FILE) $(STEP_OPT)
 
 raw_run: build
 	clear

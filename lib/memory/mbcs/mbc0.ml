@@ -4,9 +4,10 @@
 
 open Mbc
 open Utils.U16
+open Utils.U8
 
 let read_mbc0 (_ : mbc) memory address = Bytes.get memory address
-let write_mbc0 (_ : mbc) (_ : u16) (_ : byte) = ()
+let write_mbc0 (_ : mbc) (_ : u16) (_ : u8) = ()
 let set_title_mbc0 (_ : mbc) (_ : string) = ()
 let load_mbc0 (_ : mbc) = ()
 

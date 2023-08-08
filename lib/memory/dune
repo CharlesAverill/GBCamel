@@ -1,5 +1,5 @@
 (library
  (name memory)
  (public_name gbcamel.memory)
- (modules limits ram rom memmap vmem gbc_boot_rom)
- (libraries gbcamel gbcamel.memory.mbcs base64))
+ (modules limits ram rom memmap vmem)
+ (libraries gbcamel gbcamel.memory.mbcs gbcamel.memory.boot_roms))

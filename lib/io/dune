@@ -1,0 +1,3 @@
+(library
+ (name io)
+ (public_name gbcamel.io))

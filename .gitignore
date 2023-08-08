@@ -10,3 +10,4 @@
 *.cmxa
 _build
 roms/*
+lib/memory/boot_roms/*.bin

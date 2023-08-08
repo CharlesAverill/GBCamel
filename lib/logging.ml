@@ -69,4 +69,5 @@ let _log log_level message =
       if log_level = Log_Debug || log_level = Log_Info then stdout else stderr
     in
     Printf.fprintf stream "LOG:%s%s - %s\n" (string_of_log log_level) ansi_reset
-      message
+      message;
+    flush stream

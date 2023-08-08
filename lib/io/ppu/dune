@@ -1,0 +1,5 @@
+(library
+ (name ppu)
+ (public_name gbcamel.io.ppu)
+ (modules processor)
+ (libraries gbcamel.io))

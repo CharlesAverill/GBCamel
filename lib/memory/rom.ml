@@ -21,7 +21,6 @@ let load_rom path =
     (_bytes, mbc0 ())
 
 let rom_read rom address =
-  let _ = _log Log_Debug (Printf.sprintf "read %d" address) in
   if 0 <= address && address < rom_size rom then Bytes.get (fst rom) address
   else
     fatal rc_MemError
