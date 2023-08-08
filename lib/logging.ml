@@ -2,6 +2,7 @@
 
 open Globals
 
+(** Represents the severity of a log statement *)
 type log_type =
   | Log_None
   | Log_Debug
@@ -10,6 +11,7 @@ type log_type =
   | Log_Error
   | Log_Critical
 
+(** Follows the order in the type definition, \[0:5\]*)
 let int_of_log = function
   | Log_Debug -> 1
   | Log_Info -> 2
@@ -18,15 +20,8 @@ let int_of_log = function
   | Log_Critical -> 5
   | Log_None -> 0
 
-let log_of_int = function
-  | 1 -> Log_Debug
-  | 2 -> Log_Info
-  | 3 -> Log_Warning
-  | 4 -> Log_Error
-  | 5 -> Log_Critical
-  | _ -> Log_None
-
 type return_code = int * string
+(** For exits, their appropriate return code and the message type *)
 
 let rc_Ok = (0, "OK")
 and rc_Error = (1, "ERROR")
@@ -35,18 +30,33 @@ and rc_FileError = (3, "FILE ERROR")
 and rc_ArgError = (4, "ARGUMENT ERROR")
 and rc_DecodeError = (5, "DECODE ERROR")
 and rc_ImplementationError = (6, "IMPLEMENTATION ERROR")
+and rc_PPUError = (7, "PPU ERROR")
 
-exception LogError of string
-
+(** ANSI encoding for bold text *)
 let ansi_bold = "\x1b[1m"
+
+(** ANSI encoding for red text *)
 let ansi_red = "\x1b[38:5:196m"
+
+(** ANSI encoding for orange text *)
 let ansi_orange = "\x1b[38:5:208m"
+
+(** ANSI encoding for yellow text *)
 let ansi_yellow = "\x1b[38:5:178m"
+
+(** ANSI encoding for plain text *)
 let ansi_reset = "\x1b[0m"
+
+(** ANSI encoding for bold red text *)
 let error_red = ansi_bold ^ ansi_red
+
+(** ANSI encoding for bold orange text *)
 let error_orange = ansi_bold ^ ansi_orange
+
+(** ANSI encoding for bold yellow text *)
 let error_yellow = ansi_bold ^ ansi_yellow
 
+(** Gets the string representation of a {!log_type}*)
 let string_of_log = function
   | Log_Debug -> ansi_bold ^ "[DEBUG]"
   | Log_Info -> ansi_bold ^ "[INFO]"
@@ -55,6 +65,7 @@ let string_of_log = function
   | Log_Critical -> ansi_red ^ "[CRITICAL]"
   | Log_None -> ansi_reset ^ "[NONE]"
 
+(** A fatal log statement that immediately exits the program *)
 let fatal rc message =
   Printf.fprintf stderr
     "%s[%s] - %s%s\n----------------------------------------\n" error_red
@@ -62,6 +73,7 @@ let fatal rc message =
   flush stderr;
   exit (fst rc)
 
+(** Prints log statements to stdout/stderr *)
 let _log log_level message =
   if log_level = Log_None || !_GLOBAL_LOG_LEVEL > int_of_log log_level then ()
   else

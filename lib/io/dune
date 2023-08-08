@@ -1,3 +1,4 @@
 (library
  (name io)
- (public_name gbcamel.io))
+ (public_name gbcamel.io)
+ (modules virtual_register))

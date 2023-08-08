@@ -7,7 +7,9 @@ open Memory.Rom
 open Memory.Vmem
 
 type gbc = { processor : processor }
+(** A wrapper for all machine logic *)
 
+(** Initializes individual emulation components *)
 let init_gbc rom_path model =
   let loaded_rom = load_rom rom_path in
   let _ = _log Log_Info (Printf.sprintf "ROM loaded from '%s'" rom_path) in
@@ -15,11 +17,13 @@ let init_gbc rom_path model =
   let out = { processor = _init_processor memory } in
   out
 
+(** Steps the CPU and returns the number of cycles taken *)
 let step gbc step_after_instr =
   let cycles = de_step gbc.processor * 4 in
   let _ = if step_after_instr then read_line () else "" in
   cycles
 
+(** Main emulation loop *)
 let run gbc step_after_instr =
   let break_loop = ref false in
   while not !break_loop do
@@ -35,5 +39,3 @@ let run gbc step_after_instr =
     if not (elapsed_time > frame_time) then
       Core_thread.delay (frame_time -. elapsed_time)
   done
-
-let print_bios gbc = print_endline (Bytes.to_string gbc.processor.mem.boot_rom)

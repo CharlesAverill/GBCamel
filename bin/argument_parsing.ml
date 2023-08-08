@@ -3,17 +3,11 @@
 open Gbcamel.Globals
 open Gbcamel.Logging
 
-type arguments = {
-  rom_file : string;
-  print_bios : bool;
-  model : string;
-  step : bool;
-}
+type arguments = { rom_file : string; model : string; step : bool }
 
 let parse_arguments () =
   let rom_file = ref ""
   and log_level = _GLOBAL_LOG_LEVEL
-  and print_bios = ref false
   and model = ref "DMG"
   and step = ref false in
 
@@ -23,9 +17,6 @@ let parse_arguments () =
         Arg.Int (fun n -> log_level := n),
         "Minimum severity of logs to print \
          [1=Debug|2=Info|3=Warning|4=Error|5=Critical]" );
-      ( "-print-bios",
-        Arg.Set print_bios,
-        "Prints out the contents of the loaded BIOS in hex" );
       ( "-model",
         Arg.String (fun n -> model := n),
         "Forces a model of Game Boy to emulate [DMG|MGB|CGB|SameBoyCGB]" );
@@ -48,9 +39,4 @@ let parse_arguments () =
         (Printf.sprintf "-log-level must be in [1:5]\n%s" usage_msg)
   in
 
-  {
-    rom_file = !rom_file;
-    print_bios = !print_bios;
-    model = !model;
-    step = !step;
-  }
+  { rom_file = !rom_file; model = !model; step = !step }

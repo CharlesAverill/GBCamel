@@ -15,7 +15,7 @@ type processor = {
   ih : interrupt_handler;
   halted : bool ref;
 }
-(** Type for storing information about CPU state *)
+(** Emulates CPU state *)
 
 (** Returns an initialized CPU state *)
 let _init_processor mem =
