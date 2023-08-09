@@ -1,0 +1,3 @@
+[submodule "lib/impl/OWME"]
+	path = lib/impl/OWME
+	url = git@github.com:CharlesAverill/OWME.git
